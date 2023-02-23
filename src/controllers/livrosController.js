@@ -1,4 +1,6 @@
 import livros from "../models/Livro.js";
+import autores from "../models/Autor.js";
+import editoras from "../models/Editora.js";
 
 class LivroController {
     static listarLivros = (req, res) => {
@@ -6,7 +8,11 @@ class LivroController {
             .populate('autor')
             .populate('editora')
             .exec((err, livros) => {
-                res.status(200).json(livros);
+                if (err) {
+                    res.status(400).send({ message: `Id do livro não localizado: ${err.message}` });
+                } else {
+                    res.status(200).json(livros);
+                }
             })
     }
 
@@ -53,6 +59,46 @@ class LivroController {
                 res.status(500).send({ message: `Falha ao deletar livro: ${err.message}` });
             } else {
                 res.status(200).send({ message: 'Livro deletado com sucesso!' })
+            }
+        })
+    }
+
+    static listarLivroPorEditora = (req, res) => {
+        const nomeEditora = req.query.editora;
+        editoras.find({ 'nome': nomeEditora }, {}, (err, editora) => {
+            if (err) {
+                res.status(400).send({ message: `Falha ao buscar livro: ${err.message}` });
+            } else {
+                livros.find({ 'editora': editora.map(x => x._id) }, {})
+                    .populate('autor')
+                    .populate('editora')
+                    .exec((err, livros) => {
+                        if (err) {
+                            res.status(400).send({ message: `Falha ao buscar livro: ${err.message}` });
+                        } else {
+                            res.status(200).send(livros);
+                        }
+                    })
+            }
+        })
+    }
+
+    static listarLivroPorAutor = (req, res) => {
+        const nomeAutor = req.query.autor;
+        autores.find({ 'nome': nomeAutor }, {}, (err, autor) => {
+            if (err) {
+                res.status(400).send({ message: `Falha ao buscar livro: ${err.message}` });
+            } else {
+                livros.find({ 'autor': autor.map(x => x._id) }, {})
+                    .populate('autor')
+                    .populate('editora')
+                    .exec((err, livros) => {
+                        if (err) {
+                            res.status(400).send({ message: `Falha ao buscar livro: ${err.message}` });
+                        } else {
+                            res.status(200).send(livros);
+                        }
+                    })
             }
         })
     }
